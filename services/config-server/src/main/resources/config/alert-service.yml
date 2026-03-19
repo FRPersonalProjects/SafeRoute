@@ -1,0 +1,33 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: alert-service
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/alert-service
+    username: postgres
+    password: admin
+  jpa:
+    hibernate:
+      ddl-auto: update # update para desenvolvimento, validate ou none para produção
+    show-sql: false # Desativa o log de SQL para evitar poluição do console
+    open-in-view: false # Desativa o Open Session in View para evitar problemas de LazyInitializationException
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect # Especifica o dialeto do PostgreSQL para otimizar as consultas e garantir compatibilidade com os recursos do banco de dados
+  flyway:
+    enabled: false # Desativa o Flyway para evitar problemas de versao
+eureka:
+  instance:
+    prefer-ip-address: true # Força o registro pelo endereço IP
+saferoute:
+  temp-min: -2.0 # Abaixo gera alerta
+  temp-max: 8.0 # Acima gera alerta
+resilience4j:
+  retry:
+    instances:
+      retrypersonalized:
+        max-attempts: 3
+        wait-duration: 1000

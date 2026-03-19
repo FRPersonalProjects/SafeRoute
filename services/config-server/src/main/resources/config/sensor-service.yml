@@ -1,0 +1,18 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: sensor-service
+eureka:
+  instance:
+    # Força o registro pelo endereço IP
+    prefer-ip-address: true
+
+# Configuração do Circuit Breaker para testes
+resilience4j:
+  circuitbreaker:
+    instances:
+      alertServiceCB:
+        slidingWindowSize: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
