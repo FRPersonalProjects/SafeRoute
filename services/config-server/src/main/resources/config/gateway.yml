@@ -1,0 +1,15 @@
+server:
+  port: 8080
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true # Permite achar serviços pelo nome no Eureka
+      routes:
+        - id: sensor-route
+          uri: lb://SENSOR-SERVICE # 'lb' ativa o Load Balancer do Eureka
+          predicates:
+            - Path=/sensor/**
+          filters:
+            - StripPrefix=1 # Remove o '/sensor' da URL antes de mandar pro micro

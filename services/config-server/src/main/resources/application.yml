@@ -1,0 +1,12 @@
+server:
+  port: 8888
+spring:
+  application:
+    name: config-server
+  profiles:
+    active: native # arquivos locais da pasta /resources/config
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: classpath:/config # Localização dos arquivos de configuração
