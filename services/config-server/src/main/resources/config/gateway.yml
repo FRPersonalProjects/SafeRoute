@@ -3,18 +3,24 @@ server:
 spring:
   cloud:
     gateway:
-      server:
-        webflux:
-          discovery:
-            locator:
-              enabled: true # Permite achar serviços pelo nome no Eureka
-          routes:
-            - id: sensor-route
-              uri: lb://SENSOR-SERVICE # 'lb' ativa o Load Balancer do Eureka
-              predicates:
-                - Path=/sensor/**
-              filters:
-                - StripPrefix=1 # Remove o '/sensor' da URL antes de mandar pro micro
+      discovery:
+        locator:
+          enabled: true # Permite achar serviços pelo nome no Eureka
+      routes:
+        - id: sensor-route
+          uri: lb://SENSOR-SERVICE # 'lb' ativa o Load Balancer do Eureka
+          predicates:
+            - Path=/sensor/**
+          filters:
+            - StripPrefix=1 # Remove o '/sensor' da URL antes de mandar pro micro
+            - name: Retry # Filtro de Retries
+              args:
+                retries: 3 # O Gateway tentará enviar 3 vezes antes de desistir
+                statuses: BAD_GATEWAY, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT, INTERNAL_SERVER_ERROR
+                backoff:
+                  firstBackoff: 300ms # Espera 300ms na primeira falha
+                  maxBackoff: 2000ms # Limite máximo de espera
+                  factor: 2 # Multiplica o tempo de espera por 2 a cada tentativa (300, 600, 1200)
 eureka:
   client:
     service-url:

@@ -6,7 +6,7 @@ spring:
     name: alert-service
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/alert-service
+    url: jdbc:postgresql://postgres-db:5432/alert-service
     username: postgres
     password: admin
   jpa:
