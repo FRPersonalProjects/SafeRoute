@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alert-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alert-service
+  template:
+    metadata:
+      labels:
+        app: alert-service
+    spec:
+      containers:
+        - name: alert-service
+          image: alert-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://postgres-db:5432/alert-service"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "postgres"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "admin"
+            - name: TZ
+              value: "America/Sao_Paulo"
+          resources:
+            requests:
+              cpu: "150m"
+            limits:
+              cpu: "300m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alert-service
+spec:
+  selector:
+    app: alert-service
+  ports:
+    - protocol: TCP
+      port: 8082
+      targetPort: 8082

@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensor-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sensor-service
+  template:
+    metadata:
+      labels:
+        app: sensor-service
+    spec:
+      containers:
+        - name: sensor-service
+          # O Kubernetes usará a imagem que você "buildou" localmente
+          image: sensor-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "150m" # Pede 15% de núcleo (Suficiente para acordar em paz)
+            limits:
+              cpu: "300m" # Limita em 30%
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sensor-service
+spec:
+  selector:
+    app: sensor-service
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080

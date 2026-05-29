@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-db
+  template:
+    metadata:
+      labels:
+        app: postgres-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          value: "admin"
+        - name: POSTGRES_DB
+          value: "alert-service"
+        - name: TZ
+          value: "America/Sao_Paulo"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-db
+spec:
+  selector:
+    app: postgres-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
