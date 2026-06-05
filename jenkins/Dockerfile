@@ -17,8 +17,12 @@ RUN jenkins-plugin-cli --plugins \
 
 USER root
 
-# Instala Docker CLI para que o pipeline consiga rodar comandos docker
-RUN apt-get update && apt-get install -y docker.io && rm -rf /var/lib/apt/lists/*
+# Instala Docker CLI, Python3 e pip (necessarios para o pipeline)
+RUN apt-get update && apt-get install -y \
+    docker.io \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
 
 # Instala kubectl
 RUN curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" \

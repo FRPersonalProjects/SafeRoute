@@ -1,0 +1,12 @@
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+kubectl proxy
+http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+kubectl create serviceaccount dashboard-admin-sa -n kubernetes-dashboard
+kubectl create clusterrolebinding dashboard-admin-sa --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:dashboard-admin-sa
+kubectl create token dashboard-admin-sa -n kubernetes-dashboard
+
+
+kubectl get hpa
+
+.\k8s\start-k8s.bat kubectl port-forward service/postgres-db 5433:5432
+kubectl delete all --all

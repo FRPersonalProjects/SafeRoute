@@ -2,10 +2,18 @@ pipeline {
     agent any
 
     environment {
-        // Credencial criada no Jenkins: Manage Jenkins > Credentials
+        // Credencial criada em: Manage Jenkins > Credentials
         DOCKER_CREDENTIALS = credentials('docker-hub-credentials')
         DOCKER_USER        = "${DOCKER_CREDENTIALS_USR}"
         IMAGE_TAG          = "${env.GIT_COMMIT.take(8)}"
+
+        // E-mail — NUNCA hardcoded.
+        // Configurar em: Manage Jenkins > Configure System > Global properties > Environment variables
+        // NOTIFY_EMAIL  = destinatario
+        // SMTP_HOST     = ex: smtp.gmail.com
+        // SMTP_PORT     = ex: 587
+        // SMTP_USER     = remetente
+        // SMTP_PASSWORD = credencial do tipo "Secret text" com ID 'smtp-password'
     }
 
     options {
@@ -35,7 +43,9 @@ pipeline {
                     }
                     post {
                         always {
+                            // Publica resultado dos testes no Jenkins
                             junit 'services/sensor-service/target/surefire-reports/*.xml'
+                            // Publica relatorio HTML de cobertura
                             publishHTML(target: [
                                 allowMissing         : false,
                                 alwaysLinkToLastBuild: true,
@@ -44,6 +54,11 @@ pipeline {
                                 reportFiles          : 'index.html',
                                 reportName           : 'Cobertura - sensor-service'
                             ])
+                            // Arquiva o relatorio de cobertura como artefato
+                            archiveArtifacts(
+                                artifacts         : 'services/sensor-service/target/site/jacoco/**',
+                                allowEmptyArchive : false
+                            )
                         }
                     }
                 }
@@ -65,6 +80,10 @@ pipeline {
                                 reportFiles          : 'index.html',
                                 reportName           : 'Cobertura - alert-service'
                             ])
+                            archiveArtifacts(
+                                artifacts         : 'services/alert-service/target/site/jacoco/**',
+                                allowEmptyArchive : false
+                            )
                         }
                     }
                 }
@@ -90,22 +109,38 @@ pipeline {
                     steps { dir('services/alert-service')  { sh 'mvn package -DskipTests --batch-mode' } }
                 }
             }
+            post {
+                always {
+                    // Arquiva os JARs gerados como artefatos do build
+                    archiveArtifacts(
+                        artifacts         : 'services/*/target/*.jar',
+                        excludes          : 'services/*/target/*.original',
+                        fingerprint       : true,
+                        allowEmptyArchive : false
+                    )
+                }
+            }
         }
 
         // ------------------------------------------------------------------ //
         stage('Docker Build & Push') {
             steps {
                 script {
-                    def services = ['config-server', 'eureka-server', 'api-gateway', 'sensor-service', 'alert-service']
-
+                    def services = [
+                        'config-server',
+                        'eureka-server',
+                        'api-gateway',
+                        'sensor-service',
+                        'alert-service'
+                    ]
                     docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
                         services.each { svc ->
                             def image = docker.build(
                                 "${DOCKER_USER}/saferoute-${svc}:${IMAGE_TAG}",
                                 "services/${svc}"
                             )
-                            image.push()
-                            image.push('latest')
+                            image.push()          // push com tag do commit
+                            image.push('latest')  // push como latest
                         }
                     }
                 }
@@ -117,8 +152,7 @@ pipeline {
             // So executa na branch main
             when { branch 'main' }
             steps {
-                // kubeconfig deve estar configurado no Jenkins como credencial do tipo "Secret file"
-                // com ID 'kubeconfig'
+                // kubeconfig: credencial do tipo "Secret file" com ID 'kubeconfig'
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
                     sh '''
                         kubectl apply -f k8s/0-postgres-secret.yaml
@@ -142,13 +176,17 @@ pipeline {
 
     // ---------------------------------------------------------------------- //
     post {
-        success {
-            echo "Pipeline concluido com sucesso. Imagem: ${DOCKER_USER}/saferoute-*:${IMAGE_TAG}"
-        }
-        failure {
-            echo "Pipeline falhou. Verifique os logs acima."
-        }
         always {
+            script {
+                // Envia notificacao por e-mail via script Python
+                // O endereco de e-mail vem da variavel de ambiente NOTIFY_EMAIL — nunca hardcoded
+                def buildResult = currentBuild.currentResult ?: 'UNKNOWN'
+                withCredentials([string(credentialsId: 'smtp-password', variable: 'SMTP_PASSWORD')]) {
+                    withEnv(["BUILD_STATUS=${buildResult}"]) {
+                        sh 'python3 scripts/notify.py'
+                    }
+                }
+            }
             cleanWs()
         }
     }

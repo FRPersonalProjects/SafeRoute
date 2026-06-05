@@ -51,6 +51,7 @@ services:
   # Services
   api-gateway:
     build: ./services/api-gateway
+    image: user-name/saferoute-api-gateway:latest
     container_name: api-gateway
     restart: on-failure
     ports:
@@ -63,6 +64,7 @@ services:
 
   sensor-service:
     build: ./services/sensor-service
+    image: user-name/saferoute-sensor-service:latest
     container_name: sensor-service
     restart: on-failure
     depends_on:
@@ -73,6 +75,7 @@ services:
 
   alert-service:
     build: ./services/alert-service
+    image: user-name/saferoute-alert-service:latest
     container_name: alert-service
     restart: on-failure
     environment:
