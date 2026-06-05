@@ -1,0 +1,19 @@
+services:
+  jenkins:
+    build: .
+    container_name: jenkins
+    user: root
+    ports:
+      - "8090:8080"   # Interface web do Jenkins
+      - "50000:50000" # Comunicacao com agentes Jenkins
+    volumes:
+      - jenkins-data:/var/jenkins_home
+      # Monta o socket do Docker do host para o container poder buildar imagens
+      # No Windows com Docker Desktop: //var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+    restart: unless-stopped
+
+volumes:
+  jenkins-data:

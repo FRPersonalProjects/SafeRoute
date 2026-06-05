@@ -6,7 +6,7 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: alert-service # Nome do deployment
+    name: alert-service
   minReplicas: 1
   maxReplicas: 5
   metrics:

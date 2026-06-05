@@ -4,12 +4,20 @@ services:
     image: postgres:15
     container_name: alert-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: alert-service
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
       TZ: America/Sao_Paulo
     ports:
       - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Infra
   config-server:
@@ -17,20 +25,28 @@ services:
     container_name: config-server
     ports:
       - "8888:8888"
+    restart: on-failure
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
       interval: 10s
+      timeout: 5s
       retries: 5
 
-  # Eureka
+  # Service Discovery
   eureka-server:
     build: ./services/eureka-server
     container_name: eureka-server
     ports:
       - "8761:8761"
+    restart: on-failure
     depends_on:
       config-server:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Services
   api-gateway:
@@ -43,7 +59,7 @@ services:
       config-server:
         condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
 
   sensor-service:
     build: ./services/sensor-service
@@ -53,21 +69,24 @@ services:
       config-server:
         condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
 
   alert-service:
     build: ./services/alert-service
     container_name: alert-service
     restart: on-failure
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/alert-service
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/${POSTGRES_DB}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - TZ=America/Sao_Paulo
     depends_on:
       config-server:
         condition: service_healthy
       postgres-db:
-        condition: service_started
+        condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
+
+volumes:
+  postgres-data:

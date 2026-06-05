@@ -33,8 +33,7 @@ async def send_data(session, truck_id):
         pass # Ignora erros de rede para não poluir o terminal durante o stress test
 
 async def worker():
-    print(f"🔥 INICIANDO TESTE DE STRESS MASSIVO DE DADOS EM: {URL}")
-    print("Olhe a CPU no OpenLens. O K8s logo será forçado a escalar! (Ctrl+C para parar)")
+    print(f"INICIANDO TESTE DE STRESS MASSIVO DE DADOS EM: {URL}")
     
     # aiohttp vai forçar o envio de tudo de forma esmagadora
     async with aiohttp.ClientSession() as session:
@@ -50,4 +49,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(worker())
     except KeyboardInterrupt:
-        print("\n⏹️ Teste interrompido pelo usuário.")
+        print("\n Teste interrompido pelo usuário.")
